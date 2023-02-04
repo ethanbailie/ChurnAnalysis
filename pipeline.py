@@ -17,11 +17,8 @@ FinalResult = pd.read_csv("FinalResult.csv")
 FinalResult2 = pd.read_csv("FinalResult2.csv")
 test_churn = pd.read_csv("test_churn.csv")
 
-## identify if d and data are the same
-merged = d.merge(data, how="left", indicator=True)
-print(merged.loc[merged["_merge"] == "both"])
-
-## identify if test_churn is contained entirely within d
-merged = d.merge(test_churn, how="left", indicator=True)
-print(merged.loc[merged["_merge"] == "both"])
+## union the datasets to make one complete table
+dataset = pd.concat([dataset1,dataset2,dataset3,dataset4,dataset5])
+dataset = dataset.drop(columns=["Unnamed: 0"])
+dataset = pd.concat([data,dataset])
 
