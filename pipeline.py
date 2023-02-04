@@ -22,3 +22,16 @@ dataset = pd.concat([dataset1,dataset2,dataset3,dataset4,dataset5])
 dataset = dataset.drop(columns=["Unnamed: 0"])
 dataset = pd.concat([data,dataset])
 
+## create dataframe containing only churned customers from the complete table
+churned = dataset.loc[dataset["Churn"] == "Yes"]
+
+## create dataframe containing only non-churned customers from the complete table
+current = dataset.loc[dataset["Churn"] == "No"]
+
+## print subsets for a quick check to make sure they look okay at a glance
+print(churned)
+print(current)
+
+## identify average spending across both churned and current customers
+print("Churned Average Spending:", churned["TotalCharges"].mean())
+print("Non-Churned Average Spending:", current["TotalCharges"].mean())
