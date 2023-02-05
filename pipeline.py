@@ -53,19 +53,20 @@ regression["StreamingTV"] = regression["StreamingTV"].map({"Yes":1, "No":0, "No 
 regression["StreamingMovies"] = regression["StreamingMovies"].map({"Yes":1, "No":0, "No internet service":0})
 regression["Contract"] = regression["Contract"].map({"Two year":1, "One year":1, "Month-to-month":0})
 regression["PaperlessBilling"] = regression["PaperlessBilling"].map({"Yes":1, "No":0})
-regression["PaymentMethod"] = regression["PaymentMethod"].map({"Bank transfer (automatic)":1, "Credit card (automatic)":1, "Mailed check":0, "Electronic check":0})
+regression["PaymentMethod"] = regression["PaymentMethod"].map({"Bank transfer (automatic)":1,
+                                                               "Credit card (automatic)":1, "Mailed check":0,
+                                                               "Electronic check":0})
 
 ## normalize monthly and total cost for regression
 scaler = sk.MinMaxScaler()
 regression[["tenure","MonthlyCharges","TotalCharges"]] = scaler.fit_transform(regression[["tenure","MonthlyCharges","TotalCharges"]])
 
-## adjust the Churn and customerID columns for prediction model
+## adjust the Churn columns for prediction model
 y = regression["Churn"]
-test_set = regression
-test_set.drop(columns=["Churn", "customerID"], inplace=True)
+regression.drop(columns=["Churn"], inplace=True)
 
 ## create training and test sets (70% train, 30% test)
-x_train, x_test, y_train, y_test = tts(test_set, y, test_size=0.3, random_state=0)
+x_train, x_test, y_train, y_test = tts(regression, y, test_size=0.3, random_state=0)
 
 ## use statsmodel library for a prediction model creation function
 def sm_model(y_train, x_train, x_test):
@@ -119,3 +120,47 @@ model, array, intercept = sk_model(y_train,x_train, x_test)
 
 # Run AUC to validate the success of the sklearn model
 roc(model, x_test, y_test)
+
+## creates a subset of the regression dataframe that consists only of statistically significant variables
+## in this case, statistical significance is defined by a p-value of less than 0.25 (p-value being from the logit test)
+sig_regression = regression[["SeniorCitizen", "Dependents", "tenure", "PhoneService", "MultipleLines", "OnlineSecurity",
+                             "OnlineBackup", "TechSupport", "Contract", "PaperlessBilling", "PaymentMethod",
+                             "MonthlyCharges", "TotalCharges"]]
+
+## redefine training and test sets for usage with the statistically significant set
+x_train, x_test, y_train, y_test = tts(sig_regression, y, test_size=0.3, random_state=0)
+
+## runs the statsmodel prediction
+sm_model(y_train, x_train, x_test)
+
+## runs the sklearn prediction model
+model, array, intercept = sk_model(y_train,x_train, x_test)
+
+# Run AUC to validate the success of the sklearn model
+roc(model, x_test, y_test)
+
+# Function to calculate the reduction percentage in odds ratio
+def result(coeff, field,x, categorical=False):
+    if categorical:
+        exp = np.exp(x*coeff)
+        print ( field, ': Odds Ratio Reduction : '+str(round((1 - exp)*100,2 ))+'%')
+    else:
+        exp1 = np.exp(x*coeff/regression["tenure"].std())
+        exp2 = np.exp(-1*x*coeff/regression["tenure"].std())
+        print ( field, ': Odds Ratio Reduction with unit increase: '+str(round((1 - exp1)*100,2 ))+'%',
+                'Odds Ratio Reduction with unit decrease: '+str(round((1 - exp2)*100,2 ))+'%')
+
+result(0.37, 'SeniorCitizen', 1, True)
+result(-0.22, 'Dependents', 1, True)
+result(-3.18, 'tenure', 1)
+result(-1.06, 'PhoneService', 1, True)
+result(0.16, 'MultipleLines', 1, True)
+result(-0.48, 'OnlineSecurity', 1, True)
+result(-0.37, 'OnlineBackup', 1, True)
+result(-0.57, 'TechSupport', 1, True)
+result(-0.91, 'Contract', 1, True)
+result(0.50, 'PaperlessBilling', 1, True)
+result(-0.34, 'PaymentMethod', 1, True)
+result(2.96, 'MonthlyCharges', 1)
+result(1.10, 'TotalCharges', 1)
+
