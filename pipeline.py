@@ -1,6 +1,7 @@
 ## imports necessary libraries
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 import os
 import sklearn.preprocessing as sk
 import sklearn.metrics as metrics
@@ -58,12 +59,13 @@ regression["PaymentMethod"] = regression["PaymentMethod"].map({"Bank transfer (a
 scaler = sk.MinMaxScaler()
 regression[["tenure","MonthlyCharges","TotalCharges"]] = scaler.fit_transform(regression[["tenure","MonthlyCharges","TotalCharges"]])
 
-## remove the Churn column for prediction model
+## adjust the Churn and customerID columns for prediction model
 y = regression["Churn"]
-regression.drop(columns=["Churn"], inplace=True)
+test_set = regression
+test_set.drop(columns=["Churn", "customerID"], inplace=True)
 
 ## create training and test sets (70% train, 30% test)
-x_train, x_test, y_train, y_test = tts(regression, y, test_size=0.3, random_state=0)
+x_train, x_test, y_train, y_test = tts(test_set, y, test_size=0.3, random_state=0)
 
 ## use statsmodel library for a prediction model creation function
 def sm_model(y_train, x_train, x_test):
@@ -79,4 +81,41 @@ def sm_model(y_train, x_train, x_test):
     print("Accuracy score: ", metrics.accuracy_score(y_test, y_hat))
     return model, array
 
+## use sklearn library for a prediction model creation function
+def sk_model(y_train, x_train, x_test):
+    model = logistic(max_iter=100000000)
+    model.fit(x_train, y_train)
+    array = np.c_[x_train.columns.tolist(), model.coef_[0]]
+    intercept = model.intercept_[0]
+    print('\nPrinting model coefficients and intercept summary for sklearn model:\n', array, model.intercept_)
+    y_pred = model.predict(x_test)
+    print('\nPrinting predicted and actual values from sklearn:\n', np.c_[y_pred, y_test])
+    print('Confusion Matrix from sklearn\n', metrics.confusion_matrix(y_test, y_pred))
+    plt.matshow(metrics.confusion_matrix(y_test, y_pred))
+    plt.title('Confusion matrix')
+    plt.colorbar()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.grid(visible=None)
+    plt.show()
+    print('Accuracy Scores from sklearn:\n', metrics.accuracy_score(y_test, y_pred))
+    print('Classification Report from sklearn:\n', metrics.classification_report(y_test, y_pred))
+    return model, array, intercept
+
+def roc(model, x_test, y_test):
+    probs = model.predict_proba(x_test)
+    fpr, tpr, _ = metrics.roc_curve(y_test, probs[:, 1])
+    plt.plot(fpr, tpr, marker='.')
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.show()
+    print('AUC: %.3f' % metrics.roc_auc_score(y_test, probs[:, 1]))
+
+## runs the statsmodel prediction
 sm_model(y_train, x_train, x_test)
+
+## runs the sklearn prediction model
+model, array, intercept = sk_model(y_train,x_train, x_test)
+
+# Run AUC to validate the success of the sklearn model
+roc(model, x_test, y_test)
