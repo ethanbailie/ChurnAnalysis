@@ -3,6 +3,10 @@ import pandas as pd
 import numpy as np
 import os
 import sklearn.preprocessing as sk
+import sklearn.metrics as metrics
+from sklearn.model_selection import train_test_split as tts
+from sklearn.linear_model import LogisticRegression as logistic
+import statsmodels.api as sm
 
 ## set working directory to be the folder holding the data
 os.chdir(r"C:\Users\ETHAN\Desktop\Humi")
@@ -54,5 +58,25 @@ regression["PaymentMethod"] = regression["PaymentMethod"].map({"Bank transfer (a
 scaler = sk.MinMaxScaler()
 regression[["tenure","MonthlyCharges","TotalCharges"]] = scaler.fit_transform(regression[["tenure","MonthlyCharges","TotalCharges"]])
 
+## remove the Churn column for prediction model
+y = regression["Churn"]
+regression.drop(columns=["Churn"], inplace=True)
 
-regression.to_csv("regression_dataset.csv",",")
+## create training and test sets (70% train, 30% test)
+x_train, x_test, y_train, y_test = tts(regression, y, test_size=0.3, random_state=0)
+
+## use statsmodel library for a prediction model creation function
+def sm_model(y_train, x_train, x_test):
+    x_train = sm.add_constant(x_train)
+    x_test = sm.add_constant(x_test)
+    logit = sm.Logit(y_train,x_train)
+    model = logit.fit()
+    print(model.summary())
+    y_hat = list(map(round, model.predict(x_test)))
+    array = np.c_[y_hat, y_test]
+    print("Predicted and actual values: \n", array)
+    print("Confusion Matrix: \n", metrics.confusion_matrix(y_test, y_hat))
+    print("Accuracy score: ", metrics.accuracy_score(y_test, y_hat))
+    return model, array
+
+sm_model(y_train, x_train, x_test)
