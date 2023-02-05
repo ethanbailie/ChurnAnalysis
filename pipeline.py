@@ -1,5 +1,6 @@
 ## imports necessary libraries
 import pandas as pd
+import numpy as np
 import os
 
 ## set working directory to be the folder holding the data
@@ -21,6 +22,7 @@ test_churn = pd.read_csv("test_churn.csv")
 dataset = pd.concat([dataset1,dataset2,dataset3,dataset4,dataset5])
 dataset = dataset.drop(columns=["Unnamed: 0"])
 dataset = pd.concat([data,dataset])
+dataset = dataset[dataset.tenure != 0]
 
 ## create dataframe containing only churned customers from the complete table
 churned = dataset.loc[dataset["Churn"] == "Yes"]
@@ -28,10 +30,8 @@ churned = dataset.loc[dataset["Churn"] == "Yes"]
 ## create dataframe containing only non-churned customers from the complete table
 current = dataset.loc[dataset["Churn"] == "No"]
 
-## print subsets for a quick check to make sure they look okay at a glance
-print(churned)
-print(current)
-
 ## identify average spending across both churned and current customers
 avg_churned_spending = churned["TotalCharges"].mean()
 avg_current_spending = current["TotalCharges"].mean()
+
+dataset.to_csv("dataset.csv",",")
