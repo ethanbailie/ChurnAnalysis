@@ -33,5 +33,5 @@ print(churned)
 print(current)
 
 ## identify average spending across both churned and current customers
-print("Churned Average Spending:", churned["TotalCharges"].mean())
-print("Non-Churned Average Spending:", current["TotalCharges"].mean())
+avg_churned_spending = churned["TotalCharges"].mean()
+avg_current_spending = current["TotalCharges"].mean()
