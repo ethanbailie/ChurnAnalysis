@@ -57,8 +57,9 @@ regression["PaymentMethod"] = regression["PaymentMethod"].map({"Bank transfer (a
                                                                "Credit card (automatic)":1, "Mailed check":0,
                                                                "Electronic check":0})
 
-## normalize monthly and total cost for regression
-scaler = sk.MinMaxScaler()
+## standardize tenure, monthly costs, and total costs for regression
+scaler = sk.StandardScaler()
+#scaler = sk.MinMaxScaler()
 regression[["tenure","MonthlyCharges","TotalCharges"]] = scaler.fit_transform(regression[["tenure","MonthlyCharges","TotalCharges"]])
 
 ## adjust the Churn columns for prediction model
@@ -152,7 +153,7 @@ def result(coeff, field,x, categorical=False):
 
 result(0.37, 'SeniorCitizen', 1, True)
 result(-0.22, 'Dependents', 1, True)
-result(-3.18, 'tenure', 1)
+result(-1.38, 'tenure', 1)
 result(-1.06, 'PhoneService', 1, True)
 result(0.16, 'MultipleLines', 1, True)
 result(-0.48, 'OnlineSecurity', 1, True)
@@ -161,6 +162,6 @@ result(-0.57, 'TechSupport', 1, True)
 result(-0.91, 'Contract', 1, True)
 result(0.50, 'PaperlessBilling', 1, True)
 result(-0.34, 'PaymentMethod', 1, True)
-result(2.96, 'MonthlyCharges', 1)
-result(1.10, 'TotalCharges', 1)
+result(0.87, 'MonthlyCharges', 1)
+result(0.55, 'TotalCharges', 1)
 
